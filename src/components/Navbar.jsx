@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { Link, NavLink } from 'react-router-dom';
+
 
 const Navbar = () => {
     return (
@@ -7,11 +8,17 @@ const Navbar = () => {
             <h1 className="text-x1 font-bold text-blue-600">
                 Expanse Tracker
             </h1>
-           <div className="space-x-4">
-                <Link to="/" className="text-grey-700 hover:text-blue-600">Home</Link>
-                <Link to="/add" className="text-grey-700 hover:text-blue-600">Add Expanse</Link>
-                <Link to="/login" className="text-grey-700 hover:text-blue-600">Login</Link>
-            </div>
+             <div className="space-x-4">
+          <NavLink to="/" className={({ isActive }) => isActive ? "text-blue-600 font-semibold" : "text-gray-600"}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/add" className={({ isActive }) => isActive ? "text-blue-600 font-semibold" : "text-gray-600"}>
+            Add Expense
+          </NavLink>
+          <NavLink to="/login" className={({ isActive }) => isActive ? "text-blue-600 font-semibold" : "text-gray-600"}>
+            Login
+          </NavLink>
+        </div>
          </nav>
             
         </>
