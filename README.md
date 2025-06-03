@@ -23,7 +23,7 @@ A modern, feature-rich Expense Tracker built with **React** and **Vite**. Effort
 
 ## 🖥️ Demo
 
-> _Live demo link coming soon!_
+> _Live Link : https://expense-tracker-akshay.vercel.app
 
 ---
 
