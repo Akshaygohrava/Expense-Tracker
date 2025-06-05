@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 // In AuthForm.jsx
-import { auth, provider, signInWithPopup } from './firebase';
+// import { auth, provider, signInWithPopup } from './firebase';
 
-const handleGoogleSignIn = async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    console.log('User Info:', user);
-    // Proceed with user info
-  } catch (error) {
-    console.error('Error during Google Sign-In:', error);
-  }
-};
+// const handleGoogleSignIn = async () => {
+//   try {
+//     const result = await signInWithPopup(auth, provider);
+//     const user = result.user;
+//     console.log('User Info:', user);
+//     // Proceed with user info
+//   } catch (error) {
+//     console.error('Error during Google Sign-In:', error);
+//   }
+// };
 
 
 const AuthForm = () => {
