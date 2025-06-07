@@ -1,28 +1,21 @@
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-// In AuthForm.jsx
-// import { auth, provider, signInWithPopup } from './firebase';
-
-// const handleGoogleSignIn = async () => {
-//   try {
-//     const result = await signInWithPopup(auth, provider);
-//     const user = result.user;
-//     console.log('User Info:', user);
-//     // Proceed with user info
-//   } catch (error) {
-//     console.error('Error during Google Sign-In:', error);
-//   }
-// };
-
+import { auth, provider, signInWithPopup } from './Firebase';
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
 
   const toggleForm = () => setIsLogin(!isLogin);
 
-  const handleGoogleSignIn = () => {
-    // Implement Google Sign-In functionality here
-    console.log('Google Sign-In clicked');
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      console.log('User Info:', user);
+      // Here, you can redirect or store the user info
+    } catch (error) {
+      console.error('Error during Google Sign-In:', error.message);
+    }
   };
 
   return (
