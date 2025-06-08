@@ -1,24 +1,22 @@
-// src/components/PrivateRoute.jsx
-import { useEffect, useState } from 'react';
+// components/PrivateRoute.jsx
 import { Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 
 const PrivateRoute = ({ children }) => {
-  const [user, setUser] = useState(undefined); // use undefined for loading
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      setUser(currentUser);
+      setChecking(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  if (loading) {
-    return <div className="text-center p-8">Loading...</div>;
-  }
+  if (checking) return null; // or a spinner
 
   return user ? children : <Navigate to="/login" />;
 };
