@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { auth, provider, signInWithPopup } from './Firebase';
+import { auth, provider, signInWithPopup } from './firebase';
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
