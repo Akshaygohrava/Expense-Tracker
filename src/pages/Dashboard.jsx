@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { auth, db } from '../components/firebase';
+import { auth, db } from '../components/Firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
 const Dashboard = () => {

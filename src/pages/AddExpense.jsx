@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ExpenseForm from '../components/ExpenseForm';
 import { collection, addDoc } from 'firebase/firestore';
-import { db, auth } from '../components/firebase';
+import { db, auth } from '../components/Firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
 const AddExpense = () => {
