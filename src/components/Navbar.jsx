@@ -5,20 +5,22 @@ import { auth } from './Firebase';
 const Navbar = () => {
   const [user] = useAuthState(auth);
 
+  const handleLogout = () => {
+    auth.signOut();
+  };
+
   return (
-    <nav className="bg-blue-600 p-4 text-white flex justify-between">
-      <div className="font-bold text-lg">
-        <Link to="/">Expense Tracker</Link>
-      </div>
+    <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
+      <Link to="/" className="text-xl font-bold">Expense Tracker</Link>
       <div className="space-x-4">
-        {user && (
+        {user ? (
           <>
             <Link to="/add">Add Expense</Link>
-            <span>{user.displayName}</span>
-            <button onClick={() => auth.signOut()} className="ml-2 underline">Logout</button>
+            <button onClick={handleLogout} className="underline">Logout</button>
           </>
+        ) : (
+          <Link to="/login">Login</Link>
         )}
-        {!user && <Link to="/login">Login</Link>}
       </div>
     </nav>
   );
