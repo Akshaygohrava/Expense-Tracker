@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { auth, provider, signInWithPopup } from './Firebase'; // capital F in Firebase.jsx
+import { auth, provider, signInWithPopup } from './Firebase';
 import { useNavigate } from 'react-router-dom';
 
 const AuthForm = () => {
@@ -14,7 +14,7 @@ const AuthForm = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       console.log('User Info:', user);
-      navigate('/dashboard'); // redirect after login
+      navigate('/'); // ✅ Correct path to Dashboard
     } catch (error) {
       console.error('Error during Google Sign-In:', error.message);
     }
@@ -22,7 +22,6 @@ const AuthForm = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    // Optional: Add Firebase email/password auth here
     alert('Form login is currently not implemented.\nPlease use Google Sign-In.');
   };
 
@@ -68,9 +67,12 @@ const AuthForm = () => {
 
           {isLogin && (
             <div className="text-right">
-              <a href="#" className="text-sm text-blue-600 hover:underline">
+              <button
+                type="button"
+                className="text-sm text-blue-600 hover:underline"
+              >
                 Forgot password?
-              </a>
+              </button>
             </div>
           )}
 

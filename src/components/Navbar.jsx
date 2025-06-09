@@ -1,25 +1,41 @@
-import { Link } from 'react-router-dom';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from './Firebase';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { auth } from './Firebase'; // Capital F
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 const Navbar = () => {
-  const [user] = useAuthState(auth);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    auth.signOut();
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error.message);
+    }
   };
 
   return (
-    <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
-      <Link to="/" className="text-xl font-bold">Expense Tracker</Link>
-      <div className="space-x-4">
-        {user ? (
-          <>
-            <Link to="/add">Add Expense</Link>
-            <button onClick={handleLogout} className="underline">Logout</button>
-          </>
-        ) : (
-          <Link to="/login">Login</Link>
+    <nav className="bg-blue-600 p-4 flex justify-between items-center text-white">
+      <Link to="/" className="text-lg font-bold">
+        Expense Tracker
+      </Link>
+      <div className="flex gap-4 items-center">
+        {user && <Link to="/add">Add Expense</Link>} {/* ✅ Route fixed here */}
+        {!user && <Link to="/login">Login</Link>}
+        {user && (
+          <button onClick={handleLogout} className="hover:underline">
+            Logout
+          </button>
         )}
       </div>
     </nav>
