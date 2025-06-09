@@ -22,7 +22,7 @@ const App = () => {
             }
           />
           <Route
-            path="/add" // ✅ Match this with Navbar link
+            path="/add-expense" // ✅ Match this with Navbar link
             element={
               <PrivateRoute>
                 <AddExpense />
