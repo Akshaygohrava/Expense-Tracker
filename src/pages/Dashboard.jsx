@@ -76,12 +76,6 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Charts */}
-      {filteredExpenses.length > 0 && (
-        <div className="mb-10">
-          <Charts expenses={filteredExpenses} />
-        </div>
-      )}
 
       {/* Expenses List */}
       <ul className="space-y-2">
@@ -95,6 +89,14 @@ const Dashboard = () => {
           </li>
         ))}
       </ul>
+
+      
+      {/* Charts */}
+      {filteredExpenses.length > 0 && (
+        <div className="mb-10">
+          <Charts expenses={filteredExpenses} />
+        </div>
+      )}
     </div>
   );
 };
