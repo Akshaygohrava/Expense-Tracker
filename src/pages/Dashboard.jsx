@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { db, auth } from '../components/Firebase';
-import Charts from '../components/Charts'; // ⬅️ Import the chart component
+import Chart from '../components/Charts'; // Make sure this path is correct
+import Papa from 'papaparse';
 
 const Dashboard = () => {
   const [user] = useAuthState(auth);
@@ -45,8 +46,19 @@ const Dashboard = () => {
     setFilteredExpenses(filtered);
   }, [expenses, month, year, category]);
 
+  const exportToCSV = () => {
+    const csv = Papa.unparse(filteredExpenses);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'expenses.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="max-w-5xl mx-auto p-4">
+    <div className="max-w-6xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
 
       {/* Filters */}
@@ -76,6 +88,16 @@ const Dashboard = () => {
         />
       </div>
 
+ 
+      {/* CSV Export Button */}
+      <div className="mb-4 text-right">
+        <button
+          onClick={exportToCSV}
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded"
+        >
+          ⬇ Export CSV
+        </button>
+      </div>
 
       {/* Expenses List */}
       <ul className="space-y-2">
@@ -90,13 +112,11 @@ const Dashboard = () => {
         ))}
       </ul>
 
-      
-      {/* Charts */}
-      {filteredExpenses.length > 0 && (
-        <div className="mb-10">
-          <Charts expenses={filteredExpenses} />
-        </div>
-      )}
+           {/* Charts */}
+      <div className="mb-6">
+        <Chart expenses={filteredExpenses} />
+      </div>
+
     </div>
   );
 };
