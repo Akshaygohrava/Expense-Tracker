@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { db, auth } from '../components/Firebase';
 import Chart from '../components/Charts';
@@ -9,13 +9,14 @@ const Dashboard = () => {
   const [user] = useAuthState(auth);
   const [expenses, setExpenses] = useState([]);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editedExpense, setEditedExpense] = useState({});
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
   const [sortOption, setSortOption] = useState('');
 
-  // Load from localStorage initially
   useEffect(() => {
     const localData = localStorage.getItem('expenses');
     if (localData) {
@@ -23,7 +24,6 @@ const Dashboard = () => {
     }
   }, []);
 
-  // Fetch from Firestore
   useEffect(() => {
     const fetchExpenses = async () => {
       if (!user) return;
@@ -36,7 +36,7 @@ const Dashboard = () => {
           ...doc.data(),
         }));
         setExpenses(data);
-        localStorage.setItem('expenses', JSON.stringify(data)); // ✅ Sync to localStorage
+        localStorage.setItem('expenses', JSON.stringify(data));
       } catch (error) {
         console.error('Failed to fetch expenses:', error);
       }
@@ -45,7 +45,6 @@ const Dashboard = () => {
     fetchExpenses();
   }, [user]);
 
-  // Filtering, searching, sorting
   useEffect(() => {
     let filtered = [...expenses];
 
@@ -58,15 +57,11 @@ const Dashboard = () => {
     }
 
     if (category) {
-      filtered = filtered.filter(exp =>
-        exp.category?.toLowerCase() === category.toLowerCase()
-      );
+      filtered = filtered.filter(exp => exp.category?.toLowerCase() === category.toLowerCase());
     }
 
     if (search) {
-      filtered = filtered.filter(exp =>
-        exp.title?.toLowerCase().includes(search.toLowerCase())
-      );
+      filtered = filtered.filter(exp => exp.title?.toLowerCase().includes(search.toLowerCase()));
     }
 
     if (sortOption === 'amount-asc') {
@@ -91,6 +86,49 @@ const Dashboard = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleEditClick = (exp) => {
+    setEditingId(exp.id);
+    setEditedExpense({ ...exp });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditedExpense({});
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const expenseRef = doc(db, 'expenses', editedExpense.id);
+      await updateDoc(expenseRef, editedExpense);
+
+      const updatedExpenses = expenses.map(exp =>
+        exp.id === editedExpense.id ? editedExpense : exp
+      );
+      setExpenses(updatedExpenses);
+      localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+      setEditingId(null);
+      setEditedExpense({});
+    } catch (error) {
+      console.error('Update failed:', error);
+      alert('❌ Failed to save changes.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this expense?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'expenses', id));
+      const updatedExpenses = expenses.filter(exp => exp.id !== id);
+      setExpenses(updatedExpenses);
+      localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
+      alert('✅ Expense deleted successfully!');
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('❌ Failed to delete expense.');
+    }
   };
 
   return (
@@ -147,7 +185,7 @@ const Dashboard = () => {
         </select>
       </div>
 
-      {/* CSV Export Button */}
+      {/* CSV Export */}
       <div className="mb-4 text-right">
         <button
           onClick={exportToCSV}
@@ -161,11 +199,62 @@ const Dashboard = () => {
       <ul className="space-y-2 mb-8">
         {filteredExpenses.map(exp => (
           <li key={exp.id} className="bg-white shadow rounded p-4">
-            <div className="flex justify-between">
-              <span className="font-medium">{exp.title}</span>
-              <span>₹{exp.amount}</span>
-            </div>
-            <div className="text-sm text-gray-500">{exp.date} • {exp.category}</div>
+            {editingId === exp.id ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={editedExpense.title}
+                  onChange={(e) => setEditedExpense({ ...editedExpense, title: e.target.value })}
+                  className="w-full p-2 border rounded"
+                />
+                <input
+                  type="number"
+                  value={editedExpense.amount}
+                  onChange={(e) => setEditedExpense({ ...editedExpense, amount: parseFloat(e.target.value) })}
+                  className="w-full p-2 border rounded"
+                />
+                <input
+                  type="date"
+                  value={editedExpense.date}
+                  onChange={(e) => setEditedExpense({ ...editedExpense, date: e.target.value })}
+                  className="w-full p-2 border rounded"
+                />
+                <input
+                  type="text"
+                  value={editedExpense.category}
+                  onChange={(e) => setEditedExpense({ ...editedExpense, category: e.target.value })}
+                  className="w-full p-2 border rounded"
+                />
+                <div className="flex gap-2">
+                  <button onClick={handleSaveEdit} className="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+                  <button onClick={handleCancelEdit} className="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">{exp.title}</div>
+                    <div className="text-sm text-gray-500">{exp.date} • {exp.category}</div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-semibold text-right">₹{exp.amount}</span>
+                    <button
+                      onClick={() => handleEditClick(exp)}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(exp.id)}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      🗑 Delete
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>
