@@ -30,7 +30,8 @@ const Navbar = () => {
         Expense Tracker
       </Link>
       <div className="flex gap-4 items-center">
-        {user && <Link to="/add-expense">Add Expense</Link>} {/* ✅ Route fixed here */}
+        {user && <Link to="/">Dashboard</Link>}
+        {user && <Link to="/add-expense">Add Expense</Link>}
         {!user && <Link to="/login">Login</Link>}
         {user && (
           <button onClick={handleLogout} className="hover:underline">
