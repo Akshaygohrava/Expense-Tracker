@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { db, auth } from '../components/Firebase';
-import Chart from '../components/Charts'; // Make sure this path is correct
+import Chart from '../components/Charts';
 import Papa from 'papaparse';
 
 const Dashboard = () => {
   const [user] = useAuthState(auth);
-  const [expenses, setExpenses] = useState([]);
+  const [expenses, setExpenses] = useState(() => {
+    const saved = localStorage.getItem('expenses');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
@@ -16,13 +19,19 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchExpenses = async () => {
       if (!user) return;
-      const q = query(collection(db, 'expenses'), where('userId', '==', user.uid));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setExpenses(data);
+
+      try {
+        const q = query(collection(db, 'expenses'), where('userId', '==', user.uid));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setExpenses(data);
+        localStorage.setItem('expenses', JSON.stringify(data));
+      } catch (err) {
+        console.error("Error fetching expenses:", err);
+      }
     };
 
     fetchExpenses();
@@ -34,11 +43,9 @@ const Dashboard = () => {
     if (month) {
       filtered = filtered.filter(exp => exp.date?.slice(5, 7) === month);
     }
-
     if (year) {
       filtered = filtered.filter(exp => exp.date?.slice(0, 4) === year);
     }
-
     if (category) {
       filtered = filtered.filter(exp => exp.category?.toLowerCase() === category.toLowerCase());
     }
@@ -88,8 +95,7 @@ const Dashboard = () => {
         />
       </div>
 
- 
-      {/* CSV Export Button */}
+      {/* CSV Export */}
       <div className="mb-4 text-right">
         <button
           onClick={exportToCSV}
@@ -112,11 +118,10 @@ const Dashboard = () => {
         ))}
       </ul>
 
-           {/* Charts */}
-      <div className="mb-6">
+      {/* Charts */}
+      <div className="mt-6">
         <Chart expenses={filteredExpenses} />
       </div>
-
     </div>
   );
 };
