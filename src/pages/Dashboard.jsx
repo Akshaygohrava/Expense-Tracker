@@ -7,15 +7,23 @@ import Papa from 'papaparse';
 
 const Dashboard = () => {
   const [user] = useAuthState(auth);
-  const [expenses, setExpenses] = useState(() => {
-    const saved = localStorage.getItem('expenses');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [expenses, setExpenses] = useState([]);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [category, setCategory] = useState('');
+  const [search, setSearch] = useState('');
+  const [sortOption, setSortOption] = useState('');
 
+  // Load from localStorage initially
+  useEffect(() => {
+    const localData = localStorage.getItem('expenses');
+    if (localData) {
+      setExpenses(JSON.parse(localData));
+    }
+  }, []);
+
+  // Fetch from Firestore
   useEffect(() => {
     const fetchExpenses = async () => {
       if (!user) return;
@@ -28,30 +36,51 @@ const Dashboard = () => {
           ...doc.data(),
         }));
         setExpenses(data);
-        localStorage.setItem('expenses', JSON.stringify(data));
-      } catch (err) {
-        console.error("Error fetching expenses:", err);
+        localStorage.setItem('expenses', JSON.stringify(data)); // ✅ Sync to localStorage
+      } catch (error) {
+        console.error('Failed to fetch expenses:', error);
       }
     };
 
     fetchExpenses();
   }, [user]);
 
+  // Filtering, searching, sorting
   useEffect(() => {
-    let filtered = expenses;
+    let filtered = [...expenses];
 
     if (month) {
       filtered = filtered.filter(exp => exp.date?.slice(5, 7) === month);
     }
+
     if (year) {
       filtered = filtered.filter(exp => exp.date?.slice(0, 4) === year);
     }
+
     if (category) {
-      filtered = filtered.filter(exp => exp.category?.toLowerCase() === category.toLowerCase());
+      filtered = filtered.filter(exp =>
+        exp.category?.toLowerCase() === category.toLowerCase()
+      );
+    }
+
+    if (search) {
+      filtered = filtered.filter(exp =>
+        exp.title?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (sortOption === 'amount-asc') {
+      filtered.sort((a, b) => a.amount - b.amount);
+    } else if (sortOption === 'amount-desc') {
+      filtered.sort((a, b) => b.amount - a.amount);
+    } else if (sortOption === 'date-asc') {
+      filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+    } else if (sortOption === 'date-desc') {
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
     }
 
     setFilteredExpenses(filtered);
-  }, [expenses, month, year, category]);
+  }, [expenses, month, year, category, search, sortOption]);
 
   const exportToCSV = () => {
     const csv = Papa.unparse(filteredExpenses);
@@ -95,7 +124,30 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* CSV Export */}
+      {/* Search & Sort */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <input
+          type="text"
+          placeholder="🔍 Search by title..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="p-2 border rounded"
+        />
+
+        <select
+          onChange={(e) => setSortOption(e.target.value)}
+          value={sortOption}
+          className="p-2 border rounded"
+        >
+          <option value="">Sort By</option>
+          <option value="amount-asc">Amount ↑</option>
+          <option value="amount-desc">Amount ↓</option>
+          <option value="date-asc">Date ↑</option>
+          <option value="date-desc">Date ↓</option>
+        </select>
+      </div>
+
+      {/* CSV Export Button */}
       <div className="mb-4 text-right">
         <button
           onClick={exportToCSV}
@@ -106,7 +158,7 @@ const Dashboard = () => {
       </div>
 
       {/* Expenses List */}
-      <ul className="space-y-2">
+      <ul className="space-y-2 mb-8">
         {filteredExpenses.map(exp => (
           <li key={exp.id} className="bg-white shadow rounded p-4">
             <div className="flex justify-between">
@@ -119,7 +171,7 @@ const Dashboard = () => {
       </ul>
 
       {/* Charts */}
-      <div className="mt-6">
+      <div className="mb-6">
         <Chart expenses={filteredExpenses} />
       </div>
     </div>
