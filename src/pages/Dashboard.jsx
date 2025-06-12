@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
-import { collection, query, where, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+  setDoc,
+  getDoc,
+} from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { db, auth } from '../components/Firebase';
 import Chart from '../components/Charts';
@@ -16,6 +26,9 @@ const Dashboard = () => {
   const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
   const [sortOption, setSortOption] = useState('');
+
+  const [budget, setBudget] = useState('');
+  const [showBudgetInput, setShowBudgetInput] = useState(false);
 
   useEffect(() => {
     const localData = localStorage.getItem('expenses');
@@ -42,7 +55,26 @@ const Dashboard = () => {
       }
     };
 
+    const fetchBudget = async () => {
+      if (!user) return;
+
+      try {
+        const docRef = doc(db, 'budgets', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setBudget(docSnap.data().monthlyBudget);
+          localStorage.setItem('monthlyBudget', docSnap.data().monthlyBudget);
+        } else {
+          const localBudget = localStorage.getItem('monthlyBudget');
+          if (localBudget) setBudget(localBudget);
+        }
+      } catch (error) {
+        console.error('Failed to fetch budget:', error);
+      }
+    };
+
     fetchExpenses();
+    fetchBudget();
   }, [user]);
 
   useEffect(() => {
@@ -131,9 +163,63 @@ const Dashboard = () => {
     }
   };
 
+  const handleSaveBudget = async () => {
+    try {
+      if (!user) return;
+
+      const budgetRef = doc(db, 'budgets', user.uid);
+      await setDoc(budgetRef, { monthlyBudget: budget });
+
+      localStorage.setItem('monthlyBudget', budget);
+      alert('✅ Budget saved!');
+      setShowBudgetInput(false);
+    } catch (error) {
+      console.error('Failed to save budget:', error);
+      alert('❌ Failed to save budget.');
+    }
+  };
+
+  const totalMonthlySpending = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+  const budgetExceeded = budget && totalMonthlySpending > budget;
+
   return (
     <div className="max-w-6xl mx-auto p-4">
       <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
+
+      {/* Budget Warning */}
+      <div className="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-800 p-3 rounded">
+        <div className="flex justify-between items-center">
+          <div>
+            Monthly Budget:{' '}
+            {showBudgetInput ? (
+              <input
+                type="number"
+                value={budget}
+                onChange={(e) => setBudget(Number(e.target.value))}
+                className="border p-1 rounded"
+              />
+            ) : (
+              <strong>₹{budget || 'Not Set'}</strong>
+            )}
+            {budgetExceeded && (
+              <div className="text-red-600 mt-1 font-semibold">
+                ⚠️ You have exceeded your monthly budget!
+              </div>
+            )}
+          </div>
+          <div>
+            {showBudgetInput ? (
+              <button onClick={handleSaveBudget} className="bg-blue-500 text-white px-3 py-1 rounded ml-2">
+                Save
+              </button>
+            ) : (
+              <button onClick={() => setShowBudgetInput(true)} className="bg-gray-500 text-white px-3 py-1 rounded">
+                Edit Budget
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -231,29 +317,27 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : (
-              <>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{exp.title}</div>
-                    <div className="text-sm text-gray-500">{exp.date} • {exp.category}</div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="font-semibold text-right">₹{exp.amount}</span>
-                    <button
-                      onClick={() => handleEditClick(exp)}
-                      className="text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(exp.id)}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      🗑 Delete
-                    </button>
-                  </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="font-medium">{exp.title}</div>
+                  <div className="text-sm text-gray-500">{exp.date} • {exp.category}</div>
                 </div>
-              </>
+                <div className="flex items-center gap-4">
+                  <span className="font-semibold text-right">₹{exp.amount}</span>
+                  <button
+                    onClick={() => handleEditClick(exp)}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(exp.id)}
+                    className="text-red-600 hover:text-red-800 text-sm"
+                  >
+                    🗑 Delete
+                  </button>
+                </div>
+              </div>
             )}
           </li>
         ))}
