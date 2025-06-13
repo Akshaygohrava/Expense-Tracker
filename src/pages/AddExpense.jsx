@@ -19,6 +19,7 @@ const AddExpense = () => {
       ...expense,
       createdAt: new Date().toISOString(),
       userId: user.uid,
+      recurring: expense.recurring || false,
     };
 
     try {
@@ -48,6 +49,7 @@ const AddExpense = () => {
           amount: parseFloat(row.amount) || 0,
           date: row.date || new Date().toISOString().slice(0, 10),
           category: row.category || 'Uncategorized',
+          recurring: row.recurring?.toLowerCase() === 'true',
           createdAt: new Date().toISOString(),
           userId: user.uid,
         }));
@@ -89,7 +91,7 @@ const AddExpense = () => {
             className="block border border-gray-300 p-2 rounded w-full"
           />
           <p className="text-sm text-gray-500 mt-1">
-            Ensure CSV contains headers: <code>title, amount, date, category</code>
+            Ensure CSV contains headers: <code>title, amount, date, category, recurring</code>
           </p>
         </div>
       </div>

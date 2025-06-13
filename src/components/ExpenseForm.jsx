@@ -4,6 +4,8 @@ const ExpenseForm = ({ onSubmit }) => {
   const { register, handleSubmit, reset } = useForm();
 
   const submitHandler = (data) => {
+    // Convert "recurring" from string ("on") to boolean
+    data.recurring = data.recurring === true || data.recurring === 'on';
     onSubmit(data);
     reset(); // Clear form after submission
   };
@@ -65,6 +67,18 @@ const ExpenseForm = ({ onSubmit }) => {
           rows={3}
           placeholder="Optional note..."
         />
+      </div>
+
+      {/* ✅ Recurring checkbox */}
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          {...register('recurring')}
+          className="mr-2"
+        />
+        <label className="text-sm font-medium">
+          Recurring Monthly Expense?
+        </label>
       </div>
 
       <button
