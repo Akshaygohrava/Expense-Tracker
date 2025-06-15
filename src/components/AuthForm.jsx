@@ -14,7 +14,7 @@ const AuthForm = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       console.log('User Info:', user);
-      navigate('/'); // ✅ Correct path to Dashboard
+      navigate('/');
     } catch (error) {
       console.error('Error during Google Sign-In:', error.message);
     }
@@ -27,8 +27,8 @@ const AuthForm = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-600">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-xl sm:max-w-lg">
+        <h2 className="text-3xl font-bold mb-6 text-center text-blue-600">
           {isLogin ? 'Login to Your Account' : 'Create a New Account'}
         </h2>
 
