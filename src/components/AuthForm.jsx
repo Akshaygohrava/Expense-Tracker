@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { auth, provider, signInWithPopup } from './Firebase';
+import { auth, provider } from './Firebase';
+import {
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const toggleForm = () => setIsLogin(!isLogin);
@@ -12,17 +22,38 @@ const AuthForm = () => {
   const handleGoogleSignIn = async () => {
     try {
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log('User Info:', user);
+      console.log('Google login success:', result.user);
       navigate('/');
     } catch (error) {
-      console.error('Error during Google Sign-In:', error.message);
+      console.error('Google login error:', error.message);
+      alert('Google login failed.');
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    alert('Form login is currently not implemented.\nPlease use Google Sign-In.');
+
+    if (!email || !password || (!isLogin && password !== confirmPassword)) {
+      alert('Please fill out all fields correctly.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert('✅ Logged in!');
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert('✅ Account created!');
+      }
+      navigate('/');
+    } catch (error) {
+      console.error('Auth error:', error.message);
+      alert(`❌ ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,6 +69,8 @@ const AuthForm = () => {
             <input
               type="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="you@example.com"
             />
@@ -48,6 +81,8 @@ const AuthForm = () => {
             <input
               type="password"
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
             />
@@ -59,6 +94,8 @@ const AuthForm = () => {
               <input
                 type="password"
                 required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
               />
@@ -70,6 +107,7 @@ const AuthForm = () => {
               <button
                 type="button"
                 className="text-sm text-blue-600 hover:underline"
+                onClick={() => alert("Forgot password functionality not yet implemented.")}
               >
                 Forgot password?
               </button>
@@ -78,9 +116,12 @@ const AuthForm = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition"
+            disabled={loading}
+            className={`w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            {isLogin ? 'Login' : 'Sign Up'}
+            {loading ? 'Please wait...' : isLogin ? 'Login' : 'Sign Up'}
           </button>
         </form>
 
