@@ -20,6 +20,7 @@ const AddExpense = () => {
       createdAt: new Date().toISOString(),
       userId: user.uid,
       recurring: expense.recurring || false,
+      sharedWith: expense.sharedWith || [], // ✅ sharedWith array
     };
 
     try {
@@ -49,7 +50,11 @@ const AddExpense = () => {
           amount: parseFloat(row.amount) || 0,
           date: row.date || new Date().toISOString().slice(0, 10),
           category: row.category || 'Uncategorized',
+          note: row.note || '',
           recurring: row.recurring?.toLowerCase() === 'true',
+          sharedWith: row.sharedWith
+            ? row.sharedWith.split(',').map(email => email.trim()).filter(Boolean)
+            : [],
           createdAt: new Date().toISOString(),
           userId: user.uid,
         }));
@@ -91,7 +96,7 @@ const AddExpense = () => {
             className="block border border-gray-300 p-2 rounded w-full"
           />
           <p className="text-sm text-gray-500 mt-1">
-            Ensure CSV contains headers: <code>title, amount, date, category, recurring</code>
+            Ensure CSV contains headers: <code>title, amount, date, category, recurring, sharedWith</code>
           </p>
         </div>
       </div>

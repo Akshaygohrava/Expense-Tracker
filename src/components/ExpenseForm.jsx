@@ -4,10 +4,12 @@ const ExpenseForm = ({ onSubmit }) => {
   const { register, handleSubmit, reset } = useForm();
 
   const submitHandler = (data) => {
-    // Convert "recurring" from string ("on") to boolean
     data.recurring = data.recurring === true || data.recurring === 'on';
+    data.sharedWith = data.sharedWith
+      ? data.sharedWith.split(',').map(email => email.trim()).filter(email => email)
+      : [];
     onSubmit(data);
-    reset(); // Clear form after submission
+    reset();
   };
 
   return (
@@ -79,6 +81,20 @@ const ExpenseForm = ({ onSubmit }) => {
         <label className="text-sm font-medium">
           Recurring Monthly Expense?
         </label>
+      </div>
+
+      {/* ✅ Shared With Emails */}
+      <div>
+        <label className="block mb-1 font-medium">Shared With (Emails)</label>
+        <input
+          type="text"
+          {...register('sharedWith')}
+          className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g. friend@example.com, roommate@example.com"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Separate multiple emails with commas.
+        </p>
       </div>
 
       <button
