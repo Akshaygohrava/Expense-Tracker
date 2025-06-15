@@ -33,7 +33,12 @@ const Dashboard = () => {
   useEffect(() => {
     const localData = localStorage.getItem('expenses');
     if (localData) {
-      setExpenses(JSON.parse(localData));
+      try {
+        const parsed = JSON.parse(localData);
+        if (Array.isArray(parsed)) setExpenses(parsed);
+      } catch (e) {
+        console.error('Error parsing localStorage expenses:', e);
+      }
     }
   }, []);
 
@@ -47,6 +52,7 @@ const Dashboard = () => {
         const data = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
+          amount: parseFloat(doc.data().amount),
         }));
         setExpenses(data);
         localStorage.setItem('expenses', JSON.stringify(data));
@@ -62,11 +68,11 @@ const Dashboard = () => {
         const docRef = doc(db, 'budgets', user.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setBudget(docSnap.data().monthlyBudget);
+          setBudget(Number(docSnap.data().monthlyBudget));
           localStorage.setItem('monthlyBudget', docSnap.data().monthlyBudget);
         } else {
           const localBudget = localStorage.getItem('monthlyBudget');
-          if (localBudget) setBudget(localBudget);
+          if (localBudget) setBudget(Number(localBudget));
         }
       } catch (error) {
         console.error('Failed to fetch budget:', error);
@@ -136,7 +142,7 @@ const Dashboard = () => {
       await updateDoc(expenseRef, editedExpense);
 
       const updatedExpenses = expenses.map(exp =>
-        exp.id === editedExpense.id ? editedExpense : exp
+        exp.id === editedExpense.id ? { ...editedExpense, amount: parseFloat(editedExpense.amount) } : exp
       );
       setExpenses(updatedExpenses);
       localStorage.setItem('expenses', JSON.stringify(updatedExpenses));
@@ -179,8 +185,11 @@ const Dashboard = () => {
     }
   };
 
-  const totalMonthlySpending = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
-  const budgetExceeded = budget && totalMonthlySpending > budget;
+  const totalMonthlySpending = filteredExpenses.reduce(
+    (sum, exp) => sum + (isNaN(Number(exp.amount)) ? 0 : Number(exp.amount)),
+    0
+  );
+  const budgetExceeded = Number(budget) > 0 && totalMonthlySpending > Number(budget);
 
   return (
     <div className="max-w-6xl mx-auto p-4">

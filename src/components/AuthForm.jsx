@@ -14,10 +14,13 @@ const AuthForm = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
 
-  const toggleForm = () => setIsLogin(!isLogin);
+  const toggleForm = () => {
+    setIsLogin(!isLogin);
+    setPassword('');
+    setConfirmPassword('');
+  };
 
   const handleGoogleSignIn = async () => {
     try {
