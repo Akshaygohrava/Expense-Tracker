@@ -15,12 +15,16 @@ const AddExpense = () => {
       return;
     }
 
+    const sharedWithArray = expense.sharedWith
+      ? expense.sharedWith.split(',').map(email => email.trim()).filter(Boolean)
+      : [];
+
     const newExpense = {
       ...expense,
       createdAt: new Date().toISOString(),
       userId: user.uid,
       recurring: expense.recurring || false,
-      sharedWith: expense.sharedWith || [], // ✅ sharedWith array
+      sharedWith: sharedWithArray,
     };
 
     try {

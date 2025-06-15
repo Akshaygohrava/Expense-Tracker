@@ -1,14 +1,54 @@
 import { useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './Firebase'; // Capital F
 
 const ExpenseForm = ({ onSubmit }) => {
   const { register, handleSubmit, reset } = useForm();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const submitHandler = (data) => {
-    data.recurring = data.recurring === true || data.recurring === 'on';
-    data.sharedWith = data.sharedWith
-      ? data.sharedWith.split(',').map(email => email.trim()).filter(email => email)
+    const isRecurring = data.recurring === true || data.recurring === 'on';
+    const sharedEmails = data.sharedWith
+      ? data.sharedWith
+          .split(',')
+          .map(email => email.trim().toLowerCase())
+          .filter(email => email)
       : [];
-    onSubmit(data);
+
+    // Include current user's email if not already
+    if (currentUser && !sharedEmails.includes(currentUser.email)) {
+      sharedEmails.push(currentUser.email);
+    }
+
+    // Compute split amounts
+    const totalAmount = parseFloat(data.amount);
+    const numPeople = sharedEmails.length || 1;
+    const share = +(totalAmount / numPeople).toFixed(2);
+    const remaining = +(totalAmount - share * (numPeople - 1)).toFixed(2);
+
+    // Create splitAmount map
+    const splitAmount = {};
+    sharedEmails.forEach((email, idx) => {
+      splitAmount[email] = idx === 0 ? remaining : share;
+    });
+
+    const expenseData = {
+      ...data,
+      amount: totalAmount,
+      recurring: isRecurring,
+      sharedWith: sharedEmails,
+      splitAmount,
+    };
+
+    onSubmit(expenseData);
     reset();
   };
 
