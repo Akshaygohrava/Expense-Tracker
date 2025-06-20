@@ -1,11 +1,55 @@
 import { useForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './Firebase'; // Capital F
 
 const ExpenseForm = ({ onSubmit }) => {
   const { register, handleSubmit, reset } = useForm();
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const submitHandler = (data) => {
-    onSubmit(data);
-    reset(); // Clear form after submission
+    const isRecurring = data.recurring === true || data.recurring === 'on';
+    const sharedEmails = data.sharedWith
+      ? data.sharedWith
+          .split(',')
+          .map(email => email.trim().toLowerCase())
+          .filter(email => email)
+      : [];
+
+    // Include current user's email if not already
+    if (currentUser && !sharedEmails.includes(currentUser.email)) {
+      sharedEmails.push(currentUser.email);
+    }
+
+    // Compute split amounts
+    const totalAmount = parseFloat(data.amount);
+    const numPeople = sharedEmails.length || 1;
+    const share = +(totalAmount / numPeople).toFixed(2);
+    const remaining = +(totalAmount - share * (numPeople - 1)).toFixed(2);
+
+    // Create splitAmount map
+    const splitAmount = {};
+    sharedEmails.forEach((email, idx) => {
+      splitAmount[email] = idx === 0 ? remaining : share;
+    });
+
+    const expenseData = {
+      ...data,
+      amount: totalAmount,
+      recurring: isRecurring,
+      sharedWith: sharedEmails,
+      splitAmount,
+    };
+
+    onSubmit(expenseData);
+    reset();
   };
 
   return (
@@ -65,6 +109,32 @@ const ExpenseForm = ({ onSubmit }) => {
           rows={3}
           placeholder="Optional note..."
         />
+      </div>
+
+      {/* ✅ Recurring checkbox */}
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          {...register('recurring')}
+          className="mr-2"
+        />
+        <label className="text-sm font-medium">
+          Recurring Monthly Expense?
+        </label>
+      </div>
+
+      {/* ✅ Shared With Emails */}
+      <div>
+        <label className="block mb-1 font-medium">Shared With (Emails)</label>
+        <input
+          type="text"
+          {...register('sharedWith')}
+          className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g. friend@example.com, roommate@example.com"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Separate multiple emails with commas.
+        </p>
       </div>
 
       <button

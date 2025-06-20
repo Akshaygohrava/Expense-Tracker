@@ -15,18 +15,26 @@ const AddExpense = () => {
       return;
     }
 
+    const sharedWithArray = Array.isArray(expense.sharedWith)
+      ? expense.sharedWith
+      : (expense.sharedWith || '').split(',').map(email => email.trim()).filter(Boolean);
+
     const newExpense = {
       ...expense,
+      amount: parseFloat(expense.amount),
       createdAt: new Date().toISOString(),
       userId: user.uid,
+      recurring: expense.recurring || false,
+      sharedWith: sharedWithArray,
     };
 
     try {
       setSubmitting(true);
+      console.log("📤 Saving expense to Firebase:", newExpense); // debug
       await addDoc(collection(db, 'expenses'), newExpense);
       alert("✅ Expense added successfully!");
     } catch (err) {
-      console.error('Error saving expense:', err);
+      console.error('❌ Error saving expense:', err);
       alert("❌ Failed to add expense.");
     } finally {
       setSubmitting(false);
@@ -48,6 +56,11 @@ const AddExpense = () => {
           amount: parseFloat(row.amount) || 0,
           date: row.date || new Date().toISOString().slice(0, 10),
           category: row.category || 'Uncategorized',
+          note: row.note || '',
+          recurring: row.recurring?.toLowerCase() === 'true',
+          sharedWith: row.sharedWith
+            ? row.sharedWith.split(',').map(email => email.trim()).filter(Boolean)
+            : [],
           createdAt: new Date().toISOString(),
           userId: user.uid,
         }));
@@ -89,7 +102,7 @@ const AddExpense = () => {
             className="block border border-gray-300 p-2 rounded w-full"
           />
           <p className="text-sm text-gray-500 mt-1">
-            Ensure CSV contains headers: <code>title, amount, date, category</code>
+            Ensure CSV contains headers: <code>title, amount, date, category, recurring, sharedWith</code>
           </p>
         </div>
       </div>
